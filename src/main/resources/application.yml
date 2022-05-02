@@ -1,0 +1,24 @@
+selenium:
+  isHeadless: false
+  waitServiceMillis: 30000
+  waitExceptionMillis: 333
+  chromeDriver:
+    name: "webdriver.chrome.driver"
+    path: "E:\\driver\\chromedriver.exe"
+  cardWeb:
+    url: "http://finance.sysu.edu.cn:8800/CheckLogin.aspx?url=http://card.sysu.edu.cn:8090/"
+    username: "PZ/2eryTgls="
+    password: "jSOEZ8DZt18QOGrlcuJpTg=="
+    splitRegForSK: "\\\\?sk="
+    xpaths:
+      teacherNumber: "/html/body/div[1]/section/main/div[2]/div[1]/div[2]/form/div[1]/div/div/input"
+      teacherPassword: "/html/body/div[1]/section/main/div[2]/div[1]/div[2]/form/div[2]/div/div[1]/input"
+      checkCodeImg: "/html/body/div[1]/section/main/div[2]/div[1]/div[2]/form/div[3]/div/div[1]/span/span/img[1]"
+      checkCodeInput: "/html/body/div[1]/section/main/div[2]/div[1]/div[2]/form/div[3]/div/div[1]/input"
+      loginButton: "/html/body/div[1]/section/main/div[2]/div[1]/div[2]/div[1]/button[1]"
+      validCheckElement: "/html/body/div[2]/div/div[1]/div/div[1]/a"
+
+py:
+  pyLocation: "C:\\Users\\38122\\AppData\\Local\\Programs\\Python\\Python38-32\\python.exe"
+  scriptName: "C:\\Users\\38122\\PycharmProjects\\giftopng\\main.py"
+

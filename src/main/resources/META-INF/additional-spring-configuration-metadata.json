@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "Selenium.CardWebUrl",
+      "type": "java.lang.String",
+      "description": "校园卡后台网址，用于访问获取SK"
+    },
+    {
+      "name": "selenium.isHeadless",
+      "type": "java.lang.Boolean",
+      "description": "是否无头模式"
+    }
+  ]
+}
