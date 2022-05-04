@@ -8,15 +8,11 @@ import com.littlepenguin.uscshortcutsysserver.exception.WebDriverNotMatchExcepti
 import com.littlepenguin.uscshortcutsysserver.services.SKMain;
 import com.littlepenguin.uscshortcutsysserver.services.SeleniumService;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.scheduling.annotation.Async;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 class UscShortcutSysServerApplicationTests {
@@ -46,8 +42,13 @@ class UscShortcutSysServerApplicationTests {
     }
     @Test
     void testSelenium() throws CheckCodeException, IOException, InterruptedException, WebDriverNotMatchException {
-        SeleniumService seleniumService1 = (SeleniumService)app.getBean("SeleniumService");
-        seleniumService1.obtainSK();
+        for (int i = 0; i < 2; i++) {
+            ((SeleniumService) app.getBean("SeleniumService")).initObtainSK();
+        }
+        Thread.sleep(30000);
+        for (SK sk : SKMain.skQueue) {
+            System.out.println(sk.getValue());
+        }
     }
 
     @Test
@@ -57,7 +58,7 @@ class UscShortcutSysServerApplicationTests {
         SeleniumService seleniumService3 = (SeleniumService)app.getBean("SeleniumService");
         Thread thread1 = new Thread(() -> {
             try {
-                seleniumService1.obtainSK();
+                seleniumService1.initObtainSK();
             } catch (CheckCodeException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -70,7 +71,7 @@ class UscShortcutSysServerApplicationTests {
         });
         Thread thread2 = new Thread(() -> {
             try {
-                seleniumService2.obtainSK();
+                seleniumService2.initObtainSK();
             } catch (CheckCodeException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -83,7 +84,7 @@ class UscShortcutSysServerApplicationTests {
         });
         Thread thread3 = new Thread(() -> {
             try {
-                seleniumService3.obtainSK();
+                seleniumService3.initObtainSK();
             } catch (CheckCodeException e) {
                 e.printStackTrace();
             } catch (IOException e) {
