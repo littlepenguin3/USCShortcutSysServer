@@ -8,7 +8,6 @@ import com.littlepenguin.uscshortcutsysserver.exception.WebDriverNotMatchExcepti
 import com.littlepenguin.uscshortcutsysserver.utils.SeleniumOperationUtils;
 import com.littlepenguin.uscshortcutsysserver.utils.WebDriverFactory;
 import lombok.Data;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebDriver;
@@ -17,6 +16,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -30,6 +30,7 @@ import java.util.Queue;
 @Component("SeleniumService")
 @Data
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE,proxyMode = ScopedProxyMode.TARGET_CLASS)
+@Async
 public class SeleniumService {
     @Resource
     Selenium selenium;
@@ -38,21 +39,35 @@ public class SeleniumService {
     @Resource
     WebDriverFactory webDriverFactory;
 
+    WebDriver webDriver;
+    WebDriverWait waitService;
+    //状态枚举类
+    enum SeleniumServiceStatus {
+        NEW("NEW"),
+        UNINITIALIZED("UNINITIALIZED"),
+        INITIALIZED("INITIALIZED");
 
-
+        SeleniumServiceStatus(String status) {
+        }
+    }
+    //当前WebServer状态
+    SeleniumServiceStatus status = SeleniumServiceStatus.NEW;
+    //队列对象
     private static final Queue<SK> skQueue = SKMain.skQueue;
+    
     /**
-     * 获取SK，SK将加入SK队列中
+     * 初始化获取SK，WebDriver状态从NEW变为INITIALIZED，相当于第一次打开网页
      * @throws IOException
      * @throws InterruptedException
      */
-    public void obtainSK() throws CheckCodeException, IOException, InterruptedException, WebDriverNotMatchException {
+    public void initObtainSK() throws CheckCodeException, IOException, InterruptedException, WebDriverNotMatchException {
+        SeleniumServiceStatus status = SeleniumServiceStatus.UNINITIALIZED;
         //队列数量超过50直接返回
         if(skQueue.size()>=50) {return;}
 
         //获取webDriver和WebDriverWait
-        WebDriver webDriver = webDriverFactory.buildWebDriver();
-        WebDriverWait waitService = webDriverFactory.buildWebDriverWait(webDriver,selenium.waitServiceMillis);
+        webDriver = webDriverFactory.buildWebDriver();
+        waitService = webDriverFactory.buildWebDriverWait(webDriver,selenium.waitServiceMillis);
         //访问网站
         webDriver.get(selenium.cardWeb.url);
         //输入账号
@@ -69,7 +84,7 @@ public class SeleniumService {
             //启用子进程 调用python脚本获取验证码
             Process process = Runtime.getRuntime().exec(py.pyLocation + ' ' + py.scriptName + ' ' + scrFile.getPath());
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            //当前线程阻塞直到成功获取验证码 很快 约15ms
+            //当前线程阻塞直到成功获取验证码 很快 约15ms+
             process.waitFor();
             String line = null;
 
@@ -94,26 +109,43 @@ public class SeleniumService {
         //验证已经跳转可以获取sk
         SeleniumOperationUtils.ElementToBeClickableBypath(waitService,selenium.cardWeb.xpaths.validCheckElement);
         //获取sk
-        SK sk = this.getSK(webDriver);
-        skQueue.offer(sk);
-        System.out.println(Thread.currentThread().getName()+"得到"+sk.toString()+"此时队列容量为"+skQueue.size());
+        SK sk = this.splitSK();
+        //进队之前验证队列数量
+        if(skQueue.size()<50) {
+            skQueue.offer(sk);
+            System.out.println(Thread.currentThread().getName()+"得到"+sk.toString()+"此时队列容量为"+skQueue.size());
+        }
+        this.status = SeleniumServiceStatus.INITIALIZED;
+    }
 
-        //TODO： 第二次及以后获取SK逻辑 sk应该直接加入队列 设计到多线程问题
+    /**
+     * INITIALIZED状态下可以循环快速获得多个SK
+     */
+    public void cycleObtainSK() throws WebDriverNotMatchException, CheckCodeException, IOException, InterruptedException {
+        if(this.status!=SeleniumServiceStatus.INITIALIZED) {
+            this.initObtainSK();
+        }
         while(skQueue.size()<50) {
             webDriver.get(selenium.cardWeb.url);
             //验证已经跳转可以获取sk
             SeleniumOperationUtils.ElementToBeClickableBypath(waitService, selenium.cardWeb.xpaths.validCheckElement);
-            sk = this.getSK(webDriver);
+            SK sk = this.splitSK();
+            if(skQueue.size()>=50) {
+                System.out.println("已经超过50，退出!");
+                break;
+            }
             skQueue.offer(sk);
             System.out.println(Thread.currentThread().getName()+"得到"+sk.toString()+"此时队列容量为"+skQueue.size());
         }
+        //退出浏览器
+        webDriver.close();
     }
 
     /**
      * 得到SK
      * @return SK
      */
-    private SK getSK(WebDriver webDriver){
+    private SK splitSK(){
         String[] split = webDriver.getCurrentUrl().split(selenium.cardWeb.splitRegForSK);
         return new SK(split[1]);
     }
