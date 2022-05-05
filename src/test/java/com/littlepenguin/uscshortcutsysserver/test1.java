@@ -86,6 +86,34 @@ public class test1 {
      readerThread.interrupt();
      readerThread.join();
  }
+    @Test
+    public void test4() throws InterruptedException {
+        Thread exit = new Thread(() -> {
+            System.out.println("exit");
+        });
+        exit.start();
+        exit.join();
+        exit.interrupt();
+        System.out.println("Xxx");
+    }
 
+    @Test
+    public void test5() {
+        Integer i =0;
+        w:
+        for(;;) {
+            try {
+                for (; ; ) {
+                    i++;
+                    System.out.println();
+                    if (i > 5) {
+                        continue w;
+                    }
+                }
+            }finally {
+                System.out.println("跳出");
+            }
+        }
+    }
 }
 

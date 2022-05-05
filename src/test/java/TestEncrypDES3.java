@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.util.Base64;
+import java.util.LinkedList;
+import java.util.Queue;
 
 
 public class TestEncrypDES3 {
@@ -22,5 +24,26 @@ public class TestEncrypDES3 {
     void test2() throws IOException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
         byte[] bs = FileUtils.readFileToByteArray(new File("C:\\Users\\38122\\Desktop\\1.txt"));
         System.out.println(new String(DESUtils.Decryptor(bs)));
+    }
+    @Test
+    void test3(){
+        String s=new String("test");
+        Queue<String> q= new LinkedList<String>();
+        q.add(s);
+        q.add(s);
+        System.out.println(q.peek());
+        q.remove();
+        System.out.println(q.peek());
+    }
+    private void testFinally(){
+        try{
+            return;
+        }finally {
+            System.out.println(123);
+        }
+    }
+    @Test
+    void test4(){
+        testFinally();
     }
 }
